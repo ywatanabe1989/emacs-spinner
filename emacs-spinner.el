@@ -1,17 +1,22 @@
 ;;; -*- coding: utf-8; lexical-binding: t -*-
 ;;; Author: ywatanabe
-;;; Timestamp: <2025-03-01 19:53:22>
+;;; Timestamp: <2025-03-01 21:19:42>
 ;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/emacs-spinner/emacs-spinner.el
 
+;;; -*- coding: utf-8; lexical-binding: t -*-
+;;; Author: ywatanabe
+;;; Timestamp: <2025-03-01 21:15:50>
+;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/emacs-spinner/emacs-spinner.el
+;;; -*- coding: utf-8; lexical-binding: t -*-
+;;; Author: ywatanabe
+;;; Timestamp: <2025-03-01 21:10:56>
+;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/emacs-spinner/emacs-spinner.el
 ;;; emacs-spinner.el --- A spinner implementation for Emacs -*- lexical-binding: t -*-
-
 ;; Author: ywatanabe
 ;; Version: 1.0
 ;; Keywords: progress, spinner
-
 ;;; Commentary:
 ;; A lightweight spinner animation implementation for Emacs
-
 ;;; Code:
 
 (defvar emacs-spinner-frames
@@ -70,9 +75,11 @@ If POSITION is nil, use current point."
              ((markerp position)
               position)
              (t position))))
+        ;; Create marker at specified position
         (setq --emacs-spinner-marker
               (copy-marker pos))
-        (set-marker-insertion-type --emacs-spinner-marker t)
+        ;; Make it stay fixed relative to text
+        (set-marker-insertion-type --emacs-spinner-marker nil)
         ;; Return a cons cell that emacs-spinner-start can use
         (cons buf pos)))))
 
@@ -83,7 +90,6 @@ BUFFER-AND-POSITION can be:
 - nil: use current buffer and point
 - cons cell (BUFFER . POSITION): use specified buffer and position
 - BUFFER: use specified buffer and current point in that buffer
-
 Returns the timer object that can be used to identify this spinner."
   (let*
       ((buf
@@ -100,24 +106,20 @@ Returns the timer object that can be used to identify this spinner."
          ((consp buffer-and-position)
           (cdr buffer-and-position))
          (t nil))))
-
     (when
         (and
          (buffer-live-p buf)
          (not --emacs-spinner-timer))
       ;; Set position with our buffer and position
       (emacs-spinner-set-position buf pos)
-
-      ;; Insert initial space and update marker
+      ;; Add placeholder text at the marker position
       (with-current-buffer
           (marker-buffer --emacs-spinner-marker)
         (save-excursion
           (goto-char --emacs-spinner-marker)
-          (insert " ")
-          (set-marker --emacs-spinner-marker
-                      (point))))
-
-      ;; Start animation timer with fixed-width handling
+          ;; Add a space character as placeholder for spinner
+          (insert " ")))
+      ;; Start animation timer
       (setq --emacs-spinner-timer
             (run-with-timer 0 0.1
                             (lambda
@@ -132,22 +134,21 @@ Returns the timer object that can be used to identify this spinner."
                                         (let
                                             ((pos
                                               (marker-position --emacs-spinner-marker)))
-                                          ;; Use a more reliable approach for replacing text
-                                          (goto-char
-                                           (1- pos))
+                                          ;; Replace placeholder with current frame
+                                          (goto-char pos)
                                           (delete-char 1)
                                           (insert
                                            (propertize
                                             (nth --emacs-spinner-index emacs-spinner-frames)
                                             'face
                                             '(:foreground "blue")))
+                                          ;; Update animation index
                                           (setq --emacs-spinner-index
                                                 (mod
                                                  (1+ --emacs-spinner-index)
                                                  (length emacs-spinner-frames))))))
                                   (error
                                    (emacs-spinner-stop)))))))
-
       ;; Track active timers
       (push --emacs-spinner-timer --emacs-spinner-active-timers)
       --emacs-spinner-timer)))
@@ -174,9 +175,12 @@ Otherwise, stop the global spinner."
             (save-excursion
               (goto-char --emacs-spinner-marker)
               (condition-case nil
-                  (delete-char -1)
+                  (progn
+                    ;; Replace spinner with a space
+                    (delete-char 1)
+                    ;; (insert " ")
+                    (setq --emacs-spinner-marker nil))
                 (error nil))))))
-
     ;; No timer provided - stop global spinner
     (when --emacs-spinner-timer
       (cancel-timer --emacs-spinner-timer)
@@ -191,7 +195,11 @@ Otherwise, stop the global spinner."
           (save-excursion
             (goto-char --emacs-spinner-marker)
             (condition-case nil
-                (delete-char -1)
+                (progn
+                  ;; Replace spinner with a space
+                  (delete-char 1)
+                  ;; (insert " ")
+                  (setq --emacs-spinner-marker nil))
               (error nil))))))))
 
 (defun emacs-spinner-stop-all
@@ -205,11 +213,22 @@ Otherwise, stop the global spinner."
         (timer timers-to-stop)
       (emacs-spinner-stop timer))
     (setq --emacs-spinner-timer nil)
-    (setq --emacs-spinner-active-timers nil)))
-
-
+    (setq --emacs-spinner-active-timers nil)
+    (setq --emacs-spinner-marker nil)))
 
 ;;; emacs-spinner.el ends here
+;; (emacs-spinner-stop)
+;; (emacs-spinner-start)
+;; (emacs-spinner-stop)
+(message "emacs-spinner.el loaded."
+         (file-name-nondirectory
+          (or load-file-name buffer-file-name))))
+(provide 'emacs-spinner)
+(when
+    (not load-file-name)
+  (message "emacs-spinner.el loaded."
+           (file-name-nondirectory
+            (or load-file-name buffer-file-name))))
 
 (provide 'emacs-spinner)
 
