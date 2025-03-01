@@ -216,20 +216,6 @@ Otherwise, stop the global spinner."
     (setq --emacs-spinner-active-timers nil)
     (setq --emacs-spinner-marker nil)))
 
-;;; emacs-spinner.el ends here
-;; (emacs-spinner-stop)
-;; (emacs-spinner-start)
-;; (emacs-spinner-stop)
-(message "emacs-spinner.el loaded."
-         (file-name-nondirectory
-          (or load-file-name buffer-file-name))))
-(provide 'emacs-spinner)
-(when
-    (not load-file-name)
-  (message "emacs-spinner.el loaded."
-           (file-name-nondirectory
-            (or load-file-name buffer-file-name))))
-
 (provide 'emacs-spinner)
 
 (when
